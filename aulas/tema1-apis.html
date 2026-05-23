@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula — Consumo de APIs públicas</title>
+<style>
+  :root{ --accent:#2f81f7; --accent2:#1f6feb; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{ font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; background:#0a0c10; color:#1b2330; overflow:hidden; }
+  .progress{ position:fixed; top:0; left:0; right:0; height:4px; background:#e6e9ee; z-index:10; }
+  .progress span{ display:block; height:100%; width:0; background:var(--accent); transition:width .3s; }
+  .slide{ position:fixed; inset:0; display:none; flex-direction:column; justify-content:center; padding:7vh 9vw 9vh; background:#fff; }
+  .slide.active{ display:flex; animation:fade .35s ease; }
+  @keyframes fade{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none} }
+  .slide h2{ font-size:clamp(28px,4.4vw,52px); color:var(--accent); margin-bottom:26px; line-height:1.1; }
+  .slide ul{ list-style:none; display:flex; flex-direction:column; gap:18px; }
+  .slide li{ font-size:clamp(18px,2.5vw,30px); padding-left:40px; position:relative; line-height:1.35; }
+  .slide li:before{ content:'▸'; position:absolute; left:0; color:var(--accent); font-weight:700; }
+  .slide p{ font-size:clamp(18px,2.4vw,28px); line-height:1.5; max-width:62ch; }
+  .slide p + p{ margin-top:18px; }
+  .kw{ color:var(--accent); font-weight:700; }
+  .muted{ color:#6b7682; }
+  .label{ display:inline-block; font-size:13px; letter-spacing:1px; text-transform:uppercase; color:#fff; background:var(--accent); padding:5px 13px; border-radius:20px; margin-bottom:18px; width:max-content; }
+  .cover{ background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
+  .cover .tag{ font-size:clamp(13px,1.8vw,20px); letter-spacing:2px; text-transform:uppercase; opacity:.9; margin-bottom:20px; }
+  .cover h1{ font-size:clamp(34px,6.2vw,74px); line-height:1.04; margin-bottom:20px; }
+  .cover .sub{ font-size:clamp(18px,2.6vw,30px); opacity:.95; margin-bottom:44px; }
+  .cover .meta{ font-size:clamp(14px,1.8vw,20px); opacity:.92; line-height:1.8; }
+  pre.code{ background:#0d1117; color:#e6edf3; border-radius:12px; padding:24px 26px; font-family:"Cascadia Code",Consolas,Menlo,monospace; font-size:clamp(13px,1.5vw,18px); line-height:1.65; overflow:auto; max-height:62vh; border:1px solid #30363d; }
+  pre.code .k{ color:#ff7b72; } pre.code .s{ color:#a5d6ff; } pre.code .c{ color:#8b949e; font-style:italic; } pre.code .n{ color:#79c0ff; }
+  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:30px; align-items:start; }
+  .card{ border:1px solid #e1e6eb; border-left:5px solid var(--accent); border-radius:10px; padding:18px 22px; background:#f8fafc; }
+  .card h3{ font-size:clamp(18px,2.2vw,26px); margin-bottom:10px; color:#1b2330; }
+  .card p{ font-size:clamp(15px,1.7vw,20px); color:#46505a; }
+  .flow{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; font-size:clamp(15px,1.8vw,22px); margin:10px 0 6px; }
+  .flow .box{ background:var(--accent); color:#fff; padding:14px 20px; border-radius:10px; font-weight:600; }
+  .flow .box.alt{ background:#1b2330; }
+  .flow .arr{ color:var(--accent); font-size:1.5em; font-weight:700; }
+  .demo{ display:flex; flex-direction:column; gap:12px; }
+  .demo .bar{ display:flex; gap:12px; align-items:center; }
+  .demo button.play{ background:#3fb950; color:#06210f; border:0; border-radius:8px; padding:11px 20px; font-weight:700; font-size:16px; cursor:pointer; }
+  .demo iframe{ width:100%; height:48vh; border:1px solid #30363d; border-radius:10px; background:#fff; }
+  footer.hud{ position:fixed; bottom:0; left:0; right:0; height:46px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; background:#0d1117; color:#9aa7b3; font-size:13px; z-index:10; }
+  footer .nav{ display:flex; align-items:center; gap:12px; }
+  footer button{ background:#21262d; color:#e6edf3; border:1px solid #30363d; border-radius:7px; width:36px; height:30px; font-size:18px; cursor:pointer; }
+  .hint{ position:fixed; bottom:56px; right:18px; font-size:12px; color:#7d8893; z-index:10; }
+</style>
+</head>
+<body>
+  <div class="progress"><span id="bar"></span></div>
+
+  <section class="slide cover active">
+    <div class="tag">Programação Web III · Etec Bento Quirino</div>
+    <h1>Consumo de APIs públicas</h1>
+    <div class="sub">Como diferentes sistemas conversam pela internet</div>
+    <div class="meta">Prof. Carlos Henrique Rebollo · Aula demonstrativa (20 min) · 27/05/2026</div>
+  </section>
+
+  <section class="slide">
+    <span class="label">Objetivos</span>
+    <h2>O que vamos aprender</h2>
+    <ul>
+      <li>O que é uma <span class="kw">API</span> e para que ela serve</li>
+      <li>A troca <span class="kw">requisição → resposta</span> e o formato <span class="kw">JSON</span></li>
+      <li>Consumir uma API real com <span class="kw">fetch()</span></li>
+      <li><span class="kw">Tratar erros</span> para o aplicativo não quebrar</li>
+    </ul>
+  </section>
+
+  <section class="slide">
+    <h2>O que é uma API?</h2>
+    <p><span class="kw">API</span> = <i>Interface de Programação de Aplicações</i>. É um “cardápio” de serviços que um sistema oferece para outro usar — <b>sem precisar saber como ele funciona por dentro</b>.</p>
+    <div class="flow">
+      <span class="box">Seu app</span><span class="arr">→ pede →</span>
+      <span class="box alt">API (garçom)</span><span class="arr">→ busca →</span>
+      <span class="box alt">Servidor (cozinha)</span>
+    </div>
+    <p class="muted">Você pede pelo cardápio; o garçom (API) leva o pedido à cozinha e traz a resposta pronta. Você nunca entra na cozinha.</p>
+  </section>
+
+  <section class="slide">
+    <h2>Como a conversa acontece</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>1. Requisição (GET)</h3>
+        <p>O app pede dados a uma <b>URL</b>, usando um método HTTP (aqui, <b>GET</b> = “me dê”).</p>
+      </div>
+      <div class="card">
+        <h3>2. Resposta (JSON)</h3>
+        <p>O servidor devolve os dados em <b>JSON</b> — um texto leve que o JavaScript entende facilmente.</p>
+      </div>
+    </div>
+    <pre class="code" data-src="c_json"></pre>
+  </section>
+
+  <section class="slide">
+    <span class="label">Código</span>
+    <h2>Consumindo com fetch()</h2>
+    <pre class="code" data-src="c_fetch"></pre>
+    <p class="muted"><span class="kw">await</span> espera a resposta chegar; <span class="kw">.json()</span> transforma o texto em objeto JavaScript.</p>
+  </section>
+
+  <section class="slide">
+    <span class="label">Demonstração ao vivo</span>
+    <h2>Buscando um endereço (ViaCEP)</h2>
+    <div class="demo" data-src="c_demo">
+      <div class="bar"><button class="play">▶ Executar</button><span class="muted">API real: viacep.com.br</span></div>
+      <iframe sandbox="allow-scripts"></iframe>
+    </div>
+  </section>
+
+  <section class="slide">
+    <h2>E se a internet falhar?</h2>
+    <p>Uma API pode estar fora do ar, ou o dado pode não existir. Por isso usamos <span class="kw">try / catch</span>: o app avisa o usuário em vez de “quebrar”.</p>
+    <div class="card">
+      <h3>Boa prática</h3>
+      <p>Todo consumo de API deve prever o erro. Internet instável e respostas inesperadas fazem parte do mundo real.</p>
+    </div>
+  </section>
+
+  <section class="slide">
+    <span class="label">Atividade</span>
+    <h2>Sua vez</h2>
+    <ul>
+      <li>Trocar o CEP e buscar o endereço da <b>sua casa</b></li>
+      <li>Desafio: consumir <b>outra</b> API pública (ex.: PokéAPI) e mostrar um dado na tela</li>
+    </ul>
+    <p class="muted">Avaliação: observação durante a prática + entrega do código consumindo uma API <b>e</b> tratando o erro.</p>
+  </section>
+
+  <section class="slide">
+    <h2>Para levar pra casa</h2>
+    <ul>
+      <li><span class="kw">API</span> é a ponte entre sistemas</li>
+      <li><span class="kw">fetch()</span> faz a requisição; <span class="kw">.json()</span> lê a resposta</li>
+      <li>Sempre <span class="kw">trate os erros</span></li>
+    </ul>
+  </section>
+
+  <footer class="hud">
+    <span class="comp">Consumo de APIs públicas · Programação Web III</span>
+    <span class="nav"><button id="prev">‹</button><span id="counter"></span><button id="next">›</button></span>
+  </footer>
+  <div class="hint">← → para navegar · F = tela cheia</div>
+
+  <script type="text/plain" id="c_json">
+{
+  "cep": "13024-045",
+  "logradouro": "Avenida Orosimbo Maia",
+  "bairro": "Vila Estanislau",
+  "localidade": "Campinas",
+  "uf": "SP"
+}
+  </script>
+
+  <script type="text/plain" id="c_fetch">
+async function buscarEndereco(cep) {
+  const resposta = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+  const dados    = await resposta.json();   // converte JSON em objeto JS
+  mostrar(dados);
+}
+  </script>
+
+  <script type="text/plain" id="c_demo">
+// Consumindo a API publica ViaCEP
+const app = document.getElementById('app');
+
+async function buscarEndereco(cep) {
+  app.innerHTML = '<p>🔄 Buscando...</p>';
+  try {
+    const resposta = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const dados = await resposta.json();
+    if (dados.erro) throw new Error('CEP nao encontrado');
+    mostrar(dados);
+  } catch (erro) {
+    console.log('Falhou a rede, usando exemplo:', erro.message);
+    mostrar({ cep:'13024-045', logradouro:'Avenida Orosimbo Maia',
+              bairro:'Vila Estanislau', localidade:'Campinas', uf:'SP' });
+  }
+}
+
+function mostrar(d) {
+  console.log('Resposta da API:', d);
+  app.innerHTML =
+      '<div class="card"><h3>' + d.logradouro + '</h3>'
+    + '<p>' + d.bairro + ' — ' + d.localidade + '/' + d.uf + '</p>'
+    + '<p><b>CEP:</b> ' + d.cep + '</p></div>';
+}
+
+buscarEndereco('13024045'); // CEP da Etec Bento Quirino
+  </script>
+
+  <script>
+    const slides=[...document.querySelectorAll('.slide')];
+    const bar=document.getElementById('bar');
+    const counter=document.getElementById('counter');
+    let i=0;
+    function show(n){
+      i=Math.max(0,Math.min(slides.length-1,n));
+      slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+      counter.textContent=(i+1)+' / '+slides.length;
+      bar.style.width=(i/(slides.length-1)*100)+'%';
+    }
+    const next=()=>show(i+1), prev=()=>show(i-1);
+    document.getElementById('next').onclick=e=>{e.stopPropagation();next();};
+    document.getElementById('prev').onclick=e=>{e.stopPropagation();prev();};
+    addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();next();}
+      else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
+      else if(e.key==='Home'){show(0);} else if(e.key==='End'){show(slides.length-1);}
+      else if(e.key.toLowerCase()==='f'){ if(!document.fullscreenElement)document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+    });
+    slides.forEach(s=>s.addEventListener('click',e=>{
+      if(e.target.closest('.demo')||e.target.closest('button')||e.target.closest('a'))return;
+      next();
+    }));
+
+    function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    function hl(s){
+      return s.replace(/(\/\/[^\n]*)|(`[^`]*`|'[^']*'|"[^"]*")|\b(const|let|var|function|return|if|else|for|of|in|while|try|catch|throw|new|await|async|class|this|true|false|null|typeof)\b|\b(\d+(?:\.\d+)?)\b/g,
+        (m,c,str,k,n)=> c?'<span class="c">'+c+'</span>': str?'<span class="s">'+str+'</span>': k?'<span class="k">'+k+'</span>': n?'<span class="n">'+n+'</span>': m);
+    }
+    document.querySelectorAll('pre.code[data-src]').forEach(pre=>{
+      const raw=document.getElementById(pre.dataset.src).textContent.replace(/^\s*\n/,'').replace(/\s+$/,'');
+      pre.innerHTML=hl(esc(raw));
+    });
+
+    const dcss='.card{border:1px solid #d0d7de;border-radius:8px;padding:14px 16px;margin:6px 0;background:#f6f8fa;border-left:4px solid #2f81f7}.card.ok{border-left-color:#3fb950}.card.erro{border-left-color:#cf222e;background:#fff5f5}.card h3{margin:0 0 6px}.card p{margin:3px 0;color:#444}h3{margin:0 0 10px}input{padding:7px 9px;border:1px solid #d0d7de;border-radius:6px;font-size:14px}button{padding:7px 12px;margin-left:6px;border:0;border-radius:6px;background:#2f81f7;color:#fff;cursor:pointer}ul{list-style:none;padding:0;margin:12px 0}li{padding:8px 10px;border:1px solid #eaeef2;border-radius:6px;margin:5px 0;cursor:pointer}li.ok{text-decoration:line-through;color:#8a939b;background:#f6f8fa}';
+    const dhead='<!doctype html><html><head><meta charset="utf-8"><style>body{font-family:system-ui,Arial,sans-serif;margin:16px;color:#1b2330}'+dcss+'#__c{margin-top:12px;border-top:1px dashed #d0d7de;padding-top:8px;font-family:Consolas,monospace;font-size:13px;color:#57606a}#__c .e{color:#cf222e}</style></head><body><div id="app"></div><div id="__c"></div><scr'+'ipt>(function(){var b=document.getElementById("__c");var L=console.log;console.log=function(){var t=[].map.call(arguments,function(a){return (typeof a==="object")?JSON.stringify(a,null,2):String(a)}).join(" ");var d=document.createElement("div");d.textContent="› "+t;b.appendChild(d);L.apply(console,arguments)};window.onerror=function(m){var d=document.createElement("div");d.className="e";d.textContent="✖ "+m;b.appendChild(d);return true}})();<\/scr'+'ipt><scr'+'ipt>try{\n';
+    const dtail='\n}catch(e){var b=document.getElementById("__c");var d=document.createElement("div");d.className="e";d.textContent="✖ "+e.message;b.appendChild(d)}<\/scr'+'ipt></body></html>';
+    document.querySelectorAll('.demo[data-src]').forEach(d=>{
+      const f=d.querySelector('iframe'), btn=d.querySelector('.play'), src=document.getElementById(d.dataset.src).textContent;
+      btn.onclick=e=>{ e.stopPropagation(); f.srcdoc=dhead+src+dtail; };
+    });
+
+    show(0);
+  </script>
+</body>
+</html>
