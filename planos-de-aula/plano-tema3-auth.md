@@ -4,7 +4,7 @@
 |---|---|
 | **Escola** | Etec Bento Quirino — Campinas/SP |
 | **Componente curricular** | Programação Web III (Desenvolvimento de Sistemas — Novotec Integrado) |
-| **Professor(a)** | _________________________________ |
+| **Professor(a)** | Carlos Henrique Rebollo |
 | **Turma / Série** | 3ª série do Ensino Médio Integrado ao Técnico |
 | **Data** | 27/05/2026 |
 | **Duração** | 20 minutos (aula demonstrativa) |
